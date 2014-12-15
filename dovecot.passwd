@@ -1,0 +1,10 @@
+alice:x:1001:1001:Alice,,,:/home/alice:/bin/bash:misc:stuff
+bob:x:1002:1002:Bob,,,:/home/bob:/bin/bash:misc:stuff
+carol:x:1003:1003:Carol,,,:/home/carol:/bin/bash:misc:stuff
+dave:x:1004:1004:Dave,,,:/home/dave:/bin/bash:misc:stuff
+eric:x:1005:1005:Eric,,,:/home/eric:/bin/bash:misc:stuff
+frank:x:1006:1006:Frank,,,:/home/frank:/bin/bash:misc:stuff
+george:x:1007:1007:George,,,:/home/george:/bin/bash:misc:stuff
+hank:x:1008:1008:Hank,,,:/home/hank:/bin/bash:misc:stuff
+ian:x:1009:1009:Ian,,,:/home/ian:/bin/bash:misc:stuff
+joe:x:1010:1010:Joe,,,:/home/joe:/bin/bash:misc:stuff
