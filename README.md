@@ -40,10 +40,11 @@ change this accordingly.
 
 You'll need to manually create `/etc/dovecot/dovecot.passwd`.  The 
 format is similar to that of `/etc/passwd`.  Past the shell field can be 
-an undefined number of additional fields for use by Dovecot itself.  
-Dovepasswd itself limits the number of additonal fields to 32.  That 
-should be enough for anyone (heh heh).  `/etc/dovecot/dovecot.passwd`
-should by owned by root.dovecot and permissions should be 660.
+an undefined number of additional fields for use by Dovecot itself.  The 
+Dovepasswd program itsel limits the number of additional fields to 32.  
+That should be enough for anyone (heh heh).  
+`/etc/dovecot/dovecot.passwd` should by owned by root.dovecot and 
+permissions should be 0660.
 
 ## caveats
 
