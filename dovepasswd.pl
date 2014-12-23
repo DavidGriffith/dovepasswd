@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 
+use strict;
 use POSIX;
 use Tie::File;			# debian libio-all-perl
 use IO::Stty;			# debian libio-stty-perl
@@ -13,10 +14,16 @@ my $crypt = "SHA512-CRYPT";
 #my $crypt = "SHA256-CRYPT";
 #my $crypt = "MD5-CRYPT";
 
-#my $passwd_file = "/etc/dovecot/dovecot.passwd";
-my $passwd_file = "/home/dave/dove-passwd.txt";
+my $passwd_file = "/etc/dovecot/dovecot.passwd";
 my $auth_user = "dovecot";
+my $doveadm_cmd = "/usr/bin/doveadm";
 
+# To avoid potential confusion, remove one if you only offer one service.
+my @services = ("IMAP", "POP3");
+
+
+################################
+## End of configuration section
 
 my @passwd_file_array;
 my $username;
@@ -25,21 +32,32 @@ my $pass1;
 my $pass2;
 my $line;
 
+my $progname = "dovepasswd";
+
 my $max_extra = 32;
 my @junk;
-my $junk;
+my ($junk, $uid, $gid, $gecos, $home, $shell, $stuff);
 my @extra;
+my $newentry;
 
 my $line_count = 0;
 my $found = 0;
 
-print "dovepasswd: For changing your Dovecot password.\n";
+if (!defined $services[0]) {
+	die "Must define at least one service!\n";
+}
+
+print "$progname: For changing your $services[0] ";
+if (defined $services[1]) {
+	print "/ $services[1] ";
+}
+print "password.\n";
 
 my $myname = $ENV{LOGNAME} || $ENV{USER} || getpwuid($<);
 
-#if (getuid() != getpwnam($auth_user)) { 
-#	die "This script cannot be run directly.\nUse the compiled dovepw program instead.\n";
-#}
+if (geteuid() != getpwnam($auth_user)) { 
+	die "  This script cannot be run directly.\n  Use the compiled $progname program instead.\n";
+}
 
 if ($ARGV[0]) { 
 	$username = $ARGV[0];
@@ -47,14 +65,15 @@ if ($ARGV[0]) {
 	$username = $myname;
 }
 
-print "  $myname is changing $username\'s password.\n";
+if ( ($myname ne "root") && ($myname ne $username) ) {
+	die "Only root can change someone else's password\n";
+}
 
-#if ( ($myname ne "root") && ($myname ne $username) ) {
-#	die "Only root can change someone else's password\n";
-#}
+if (!(-r $passwd_file)) { die "Unable to read $passwd_file!\n"; }
 
+if (!(-w $passwd_file)) { die "Unable to write to $passwd_file!\n"; }
 
-tie @passwd_file_array, 'Tie::File', $passwd_file or die "  Unable to read $passwd_file!\n";
+tie @passwd_file_array, 'Tie::File', $passwd_file or die "  Unable to tie $passwd_file!\n";
 
 foreach (@passwd_file_array) {
 	if (m/^$username/) {
@@ -64,7 +83,23 @@ foreach (@passwd_file_array) {
 	$line_count++;
 }
 
-if (!$found) { print "  No such user in $passwd_file!\n"; exit;}
+print "Changing $services[0] ";
+if (defined $services[1]) {
+	print "/ $services[1] ";
+}
+print "password for $username.\n";
+
+
+if (!$found) {
+	if ($myname ne "root") {
+		print "  Sorry, but you're not allowed to use IMAP or POP3.\n"; 
+		exit;
+	}
+	$line_count++;
+	print "  Sorry, you'll have to manually add an entry to $passwd_file.\n";
+}
+
+REDO:
 
 print "Enter new password: ";
 
@@ -82,9 +117,12 @@ chomp $pass2;
 
 print "\n";
 
-if ($pass1 ne $pass2) { die "Error: Passwords don't match!\n"; }
+if ($pass1 ne $pass2) {
+	print "Error: Passwords don't match!\n";
+	goto REDO;
+}
 
-# Check a password?
+# Check the password?
 my $pwcheck = Data::Password::Check->check({ 'password' => $pass1 });
 
 # Did we have any errors?
@@ -94,28 +132,29 @@ if ($pwcheck->has_errors) {
 	  join("\n", @{ $pwcheck->error_list }),
 	  "\n"
 	  );
-	exit;
+	goto REDO;
 }
 
-$passwd = `doveadm pw -s $crypt -u $username -p $pass1`;
+$passwd = `$doveadm_cmd pw -s $crypt -u $username -p $pass1`;
 
 chomp($passwd);
-print "$passwd\n";
-exit;
 
 ($junk, $junk, $uid, $gid, $gecos, $home, $shell, @extra) = split(/:/, $passwd_file_array[$line_count], $max_extra);
 
 if (@extra) { 
 	my $stuff = join(':', @extra);
-	$newline = "$username:$passwd:$uid:$gid:$gecos:$home:$shell:$stuff";
+	$newentry = "$username:$passwd:$uid:$gid:$gecos:$home:$shell:$stuff";
 } else {
-	$newline = "$username:$passwd:$uid:$gid:$gecos:$home:$shell";
+	$newentry = "$username:$passwd:$uid:$gid:$gecos:$home:$shell";
 }
-chomp($newline);
+chomp($newentry);
 
 # Now replace our entry.
-$passwd_file_array[$line_count] = $newline;
+$passwd_file_array[$line_count] = $newentry;
 untie @passwd_file_array;
 
-print "dovepasswd: dovecot password updated sucessfully\n";
-
+print "$progname: $services[0] ";
+if (defined $services[1]) {
+	print "/ $services[1] ";
+}
+print "password updated sucessfully\n";

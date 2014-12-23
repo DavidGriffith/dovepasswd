@@ -32,11 +32,18 @@ change this accordingly.
     gcc -o dovepasswd dovepasswd.c
     strip dovepasswd
     sudo cp dovepasswd /usr/local/bin
-    sudo chown root.dovecot /usr/local/bin/dovepasswd
+    sudo chown root.root /usr/local/bin/dovepasswd
     sudo chmod 4750 /usr/local/bin/dovepasswd
     sudo cp dovepasswd.pl /usr/local/bin
     sudo chown root.root /usr/local/bin/dovepasswd.pl
     sudo chmod 0755 /usr/local/bin/dovepasswd.pl
+
+You'll need to manually create `/etc/dovecot/dovecot.passwd`.  The 
+format is similar to that of `/etc/passwd`.  Past the shell field can be 
+an undefined number of additional fields for use by Dovecot itself.  
+Dovepasswd itself limits the number of additonal fields to 32.  That 
+should be enough for anyone (heh heh).  `/etc/dovecot/dovecot.passwd`
+should by owned by root.dovecot and permissions should be 660.
 
 ## caveats
 
